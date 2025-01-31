@@ -359,7 +359,8 @@ public class qwertyCoordinates : MonoBehaviour {
 
         bool incorrectLetter = false;
         List<int> correctLetterIndices = new List<int>();
-        for(int i = 0; i < inputtedText.Length; i += 2)
+        bool foundOutTooLong = false;
+        for (int i = 0; i < inputtedText.Length; i += 2)
         {
             if(i + 1 >= inputtedText.Length)
             {
@@ -367,6 +368,17 @@ public class qwertyCoordinates : MonoBehaviour {
                 incorrectLetter = true;
                 break;
             }
+            if(i / 2 >= puzzle.Length)
+            {
+                if (!foundOutTooLong)
+                {
+                    LogMsg("The remaining generated letters do not fit in the puzzle.");
+                    foundOutTooLong = true;
+                }
+                incorrectLetter = true;
+                continue;
+            }
+
             char letterFromInput = keyboardLayout[RowFromCharacter(inputtedText[i]), IndexFromCharacter(inputtedText[i + 1])];
             if (inputtedText[i] == inputtedText[i + 1]) //incorrect letter
             {
@@ -506,7 +518,7 @@ public class qwertyCoordinates : MonoBehaviour {
         }
         //answer.Shuffle();
         //this commented out piece of code is used for debugging
-        //answer = new List<string> { "sleek", "aye" };
+        //answer = new List<string> { "tea", "mighty" };
 
         //create the log for the answer
         LogMsgSilent("Trying answer: " + FormatStringList(answer));

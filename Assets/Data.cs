@@ -58,7 +58,7 @@ namespace Words
                 "CAB", "CAD", "CAM", "CAN", "CAP", "CAR", "CAT", "CAW", "CAY", "CHI", "COB", "COD", "COG", "CON", "COO", "COP", "COT", "COW", "COY", "CRY", "CUB", "CUD", "CUE", "CUP", "CUR", "CUT",
                 "DAB", "DAD", "DAM", "DAY", "DEN", "DEW", "DID", "DIE", "DIG", "DIM", "DIN", "DIP", "DOC", "DOE", "DOG", "DON", "DOT", "DRY", "DUB", "DUD", "DUE", "DUG", "DUN", "DUO", "DYE",
                 "EAR", "EAT", "EBB", "EEK", "EEL", "EGG", "EGO", "EKE", "ELF", "ELK", "ELL", "ELM", "EMU", "END", "EON", "ERA", "ERG", "ERR", "ETA", "EVE", "EWE", "EYE",
-                "FAD", "FAN", "FAR", "FAT", "FAX", "FAY", "FED", "FEE", "FEN", "FEW", "FEY", "FEZ", "FIB", "FIE", "FIG", "FIN", "FIR", "FIT", "FIX", "FLU", "FLY", "FOB", "FOE", "FOG", "FOR", "FOX", "FRO", "FRY", "FUN", "FUR",
+                "FAB", "FAD", "FAN", "FAR", "FAT", "FAX", "FAY", "FED", "FEE", "FEN", "FEW", "FEY", "FEZ", "FIB", "FIE", "FIG", "FIN", "FIR", "FIT", "FIX", "FLU", "FLY", "FOB", "FOE", "FOG", "FOR", "FOX", "FRO", "FRY", "FUN", "FUR", //added FAB
                 "GAB", "GAD", "GAG", "GAL", "GAP", "GAR", "GAS", "GAY", "GEE", "GEL", "GEM", "GET", "GIG", "GIN", "GNU", "GOB", "GOD", "GOO", "GOT", "GUM", "GUN", "GUT", "GUY", "GYM", "GYP",
                 "HAD", "HAG", "HAH", "HAM", "HAP", "HAS", "HAT", "HAW", "HAY", "HEM", "HEN", "HEP", "HER", "HEW", "HEX", "HEY", "HID", "HIE", "HIM", "HIP", "HIS", "HIT", "HOB", "HOD", "HOE", "HOG", "HOP", "HOT", "HOW", "HUB", "HUE", "HUG", "HUH", "HUM", "HUT",
                 "ICE", "ICY", "ILK", "ILL", "IMP", "INK", "INN", "ION", "IRE", "IRK", "ITS", "IVY",
@@ -224,6 +224,6 @@ namespace Words
             }
         };
         //this is included to make sure puzzles generated use less questionable words, but so these can still be included as valid answers
-        private readonly List<string> otherWords = new List<string> { "AUK", "LEE", "QUA", "QUAY", "QUAD", "XYLO", "VOLTAIC" }; //i'm still including quad fuck you
+        private readonly List<string> otherWords = new List<string> { "AUK", "LEE", "QUA", "QUAY", "QUAD", "XYLO", "MORSE", "VOLTAIC" }; //i'm still including quad fuck you
     }
 }
