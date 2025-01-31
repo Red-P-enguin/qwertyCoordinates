@@ -1,0 +1,10 @@
+{
+  "name": "qwertyCoordinates-Editor",
+  "references": [
+    "qwertyCoordinates"
+  ],
+  "includePlatforms": [
+    "Editor"
+  ],
+  "excludePlatforms": []
+}
