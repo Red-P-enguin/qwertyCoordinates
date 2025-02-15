@@ -224,6 +224,6 @@ namespace Words
             }
         };
         //this is included to make sure puzzles generated use less questionable words, but so these can still be included as valid answers
-        private readonly List<string> otherWords = new List<string> { "AUK", "LEE", "QUA", "QUAY", "QUAD", "XYLO", "MORSE" }; //i'm still including quad fuck you
+        private readonly List<string> otherWords = new List<string> { "AUK", "LEE", "QUA", "QUAY", "QUAD", "XYLO", "MORSE", "NERDING" }; //i'm still including quad fuck you
     }
 }

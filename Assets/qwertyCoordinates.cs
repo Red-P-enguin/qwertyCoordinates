@@ -504,6 +504,7 @@ public class qwertyCoordinates : MonoBehaviour {
         }
 
         module.HandlePass();
+        bombAudio.PlaySoundAtTransform("win", transform);
         solved = true;
         puzzleText.color = Color.green;
         backgroundStarMaterial.color = Color.green;

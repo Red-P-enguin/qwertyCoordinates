@@ -20160,6 +20160,7 @@ MonoBehaviour:
   AudioVolume: 0.25
   AudioClips:
   - {fileID: 8300000, guid: 26c49c8d1446e0d498dd6c03166fd1b5, type: 3}
+  - {fileID: 8300000, guid: 48c5f935c3d03e145a4b5265c773cbb6, type: 3}
   StrikeCount: 3
   TimeLimit: 600
   BombSize: 1
