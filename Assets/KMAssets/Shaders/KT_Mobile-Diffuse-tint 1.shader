@@ -1,7 +1,7 @@
 // Simplified Diffuse shader. Differences from regular Diffuse one:
 // - no Main Color
 
-Shader "KT/Mobile/DiffuseTintWave" {
+Shader "KT/SUPERCOOLSHADER" {
 Properties {
 	_MainTex ("Base (RGB)", 2D) = "white" {}
 	_Color ("Tint", Color) = (1,1,1,1)
@@ -11,6 +11,7 @@ Properties {
 SubShader {
 	Tags { "RenderType"="Opaque" }
 	LOD 150
+	Lighting Off
 
 CGPROGRAM
 // Mobile improvement: noforwardadd

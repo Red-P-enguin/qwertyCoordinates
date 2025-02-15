@@ -17,10 +17,9 @@ public class qwertyCoordinates : MonoBehaviour {
     private bool reset;
 
     //visuals
-    public Text puzzleText;
+    public Text puzzleText; //"puzzle" in the code refers to the large central text
     public Text[] puzzleOutlineText;
-    //public Text answerText;
-    public GameObject answerTextParent;
+    public GameObject answerTextParent; //"answer" in the code refers to the bottom underscores used for input
     public GameObject answerTextPrefab;
     public GameObject answerIconPrefab;
     List<SpriteRenderer> answerTextRenderers = new List<SpriteRenderer>();
@@ -48,8 +47,8 @@ public class qwertyCoordinates : MonoBehaviour {
     char[,] keyboardLayout = new char[3, 11]
     {
         { 'T','q','w','e','r','t','y','u','i','o','p' },
-        { 'C','a','s','d','f','g','h','j','k','l',';' },
-        { 'S','z','x','c','v','b','n','m',',','.','/' }
+        { 'C','a','s','d','f','g','h','j','k','l','?' },
+        { 'S','z','x','c','v','b','n','m','?','?','?' } //why are ,, ., /, and ; question marks? to make logging easier (don't have to code in the edge case)
     };
 
     //submission
@@ -84,45 +83,59 @@ public class qwertyCoordinates : MonoBehaviour {
     }
 
     void Start () {
-        generatePuzzle();
-
-        puzzleText.text = puzzle;
-        for(int i = 0; i < 8; i++)
-        {
-            puzzleOutlineText[i].text = puzzle;
-        }
-
-        /*answerText.text = "";
-        for(int i = 0; i < answer.Count; i++)
-        {
-            for(int j = 0; j < answer[i].Length; j++)
-            {
-                if(char.IsUpper(answer[i][j]))
-                {
-                    answerText.text += "<color=magenta>_</color>";
-                }
-                else
-                {
-                    answerText.text += "_";
-                }
-            }
-            answerText.text += " ";
-        }*/
-
-        instantiateDashes();
+        SetupModule();
 
         backgroundStarMaterial = new Material(backgroundStarRenderer.material);
         backgroundStarRenderer.material = backgroundStarMaterial;
         StartCoroutine(WaveStar());
     }
 
+    void SetupModule() //expects every variable to be completely blank
+    {
+        generatePuzzle();
+
+        SetBigTest(puzzle);
+
+        instantiateDashes();
+    }
+
+    void resetModule() //resets every necessary component of the module and starts from scratch
+    {
+        //reset all puzzle-related variables
+        puzzle = "";
+        answer.Clear();
+        totalAnswerLength = 0;
+        formattedAnswer = "";
+
+        //reset all input
+        inputtedText = "";
+        inputLength = 0;
+        inputIndex = 0;
+        capsLock = false;
+        shift = false;
+        tabOn = false;
+
+        //remove all sprites that the previous answer had
+        foreach (Transform child in answerTextParent.transform)
+        {
+            Destroy(child.gameObject);
+        }
+        answerTextRenderers.Clear();
+        answerIconRenderers.Clear();
+
+        SetupModule();
+    }
+
+    //input
     void Update()
     {
         if (focused && !solved)
         {
             if(Input.anyKeyDown && reset)
             {
-                resetDashes();
+                resetModule();
+                reset = false;
+                return;
             }
 
             for(int i = 0; i < TypableKeys.Length; i++)
@@ -356,41 +369,59 @@ public class qwertyCoordinates : MonoBehaviour {
     void checkAnswer()
     {
         LogMsg("Submitted " + inputtedText);
+        string visualSubmissionText = "";
+        string visualColoredSubmissionText = "";
 
         bool incorrectLetter = false;
         List<int> correctLetterIndices = new List<int>();
         bool foundOutTooLong = false;
         for (int i = 0; i < inputtedText.Length; i += 2)
         {
+            string letterColor = "red"; //this will only change if the letter is correct
+
             if(i + 1 >= inputtedText.Length)
             {
                 LogMsg("Ending character " + inputtedText[i] + " doesn't have another character to make a coordinate.");
                 incorrectLetter = true;
+                visualSubmissionText += '?';
+                visualColoredSubmissionText += ColorCharacter('?', letterColor);
                 break;
             }
-            if(i / 2 >= puzzle.Length)
+
+            char letterFromInput = char.ToUpper(keyboardLayout[RowFromCharacter(inputtedText[i]), IndexFromCharacter(inputtedText[i + 1])]);
+            if (i / 2 >= puzzle.Length)
             {
                 if (!foundOutTooLong)
                 {
                     LogMsg("The remaining generated letters do not fit in the puzzle.");
+                    if (RowFromCharacter(inputtedText[i]) == RowFromCharacter(inputtedText[i + 1]) || IndexFromCharacter(inputtedText[i]) == IndexFromCharacter(inputtedText[i + 1]))
+                    {
+                        letterFromInput = '?';
+                    }
+
                     foundOutTooLong = true;
                 }
+
+                //im repeating my code but i dont care
+                visualSubmissionText += letterFromInput;
+                visualColoredSubmissionText += ColorCharacter(letterFromInput, letterColor);
                 incorrectLetter = true;
                 continue;
             }
-
-            char letterFromInput = keyboardLayout[RowFromCharacter(inputtedText[i]), IndexFromCharacter(inputtedText[i + 1])];
+            
             if (inputtedText[i] == inputtedText[i + 1]) //incorrect letter
             {
                 LogMsg("Coordinate " + inputtedText[i] + inputtedText[i + 1] + " both are the same letter.");
                 incorrectLetter = true;
+                letterFromInput = '?';
             }
             else if (RowFromCharacter(inputtedText[i]) == RowFromCharacter(inputtedText[i + 1]) || IndexFromCharacter(inputtedText[i]) == IndexFromCharacter(inputtedText[i + 1])) //incorrect letter
             {
                 LogMsg("Coordinate " + inputtedText[i] + inputtedText[i + 1] + "'s characters are the same row/column.");
                 incorrectLetter = true;
+                letterFromInput = '?';
             }
-            else if (letterFromInput != char.ToLower(puzzle[i / 2])) //incorrect letter
+            else if (letterFromInput != char.ToUpper(puzzle[i / 2])) //incorrect letter
             {
                 LogMsg("Coordinate " + inputtedText[i] + inputtedText[i + 1] + " results in the character " + letterFromInput + ", which is incorrect. (Expected character: " + char.ToLower(puzzle[i / 2]) + ")");
                 incorrectLetter = true;
@@ -399,10 +430,18 @@ public class qwertyCoordinates : MonoBehaviour {
             {
                 correctLetterIndices.Add(i);
                 correctLetterIndices.Add(i+1);
+                letterColor = "lime";
             }
+
+            visualSubmissionText += letterFromInput;
+            visualColoredSubmissionText += ColorCharacter(letterFromInput, letterColor);
         }
 
-        if(incorrectLetter)
+        SetBigTest(visualSubmissionText);
+        //bodge, don't caare
+        puzzleText.text = visualColoredSubmissionText;
+
+        if (incorrectLetter)
         {
             reset = true;
             module.HandleStrike();
@@ -470,43 +509,11 @@ public class qwertyCoordinates : MonoBehaviour {
         backgroundStarMaterial.color = Color.green;
     }
 
-    void resetDashes()
-    {
-        reset = false;
-        inputIndex = 0;
-        inputLength = 0;
-        inputtedText = "";
-        capsLock = false;
-
-        int index = 0;
-        for (int i = 0; i < answer.Count; i++)
-        {
-            //print("Word " + i + " (" + answer[i] + ")");
-
-            for (int j = 0; j < answer[i].Length; j++, index++)
-            {
-                //print("j=" + j + " : index=" + index);
-                if (char.IsUpper(answer[i][j]))
-                {
-                    answerIconRenderers[index].color = Color.cyan;
-                    answerTextRenderers[index].sprite = answerDashUppercase;
-                    answerTextRenderers[index].color = Color.cyan;
-                }
-                else
-                {
-                    answerIconRenderers[index].color = Color.white;
-                    answerTextRenderers[index].sprite = answerDashLowercase;
-                    answerTextRenderers[index].color = Color.white;
-                }
-                answerIconRenderers[index].sprite = null;
-            }
-        }
-    }
-
+    //puzzle generation
     void generatePuzzle()
     {
         //generate the answer
-        while(Mathf.Abs(desiredLength - totalAnswerLength) >= 3 && totalAnswerLength < desiredLength) //puzzle is about the desired length
+        while(Mathf.Abs(desiredLength - totalAnswerLength) >= 3 && totalAnswerLength < desiredLength) //exits when the answer is about the desired length
         {
             int length = Random.Range(3, Mathf.Min(9, desiredLength - totalAnswerLength));
             string word = new Data().PickWord(length).ToLower();
@@ -516,14 +523,13 @@ public class qwertyCoordinates : MonoBehaviour {
                 totalAnswerLength += word.Length;
             }
         }
-        //answer.Shuffle();
         //this commented out piece of code is used for debugging
-        //answer = new List<string> { "tea", "mighty" };
+        //answer = new List<string> { "" };
 
         //create the log for the answer
         LogMsgSilent("Trying answer: " + FormatStringList(answer));
 
-        bool initialCapsLockState = false;
+        bool initialCapsLockState = false; //this is kept outside of this loop because it needs to carry over between words
         //generate the puzzle based on the answer
         for(int i = 0; i < answer.Count; i++) //for every word in the answer
         {
@@ -590,6 +596,7 @@ public class qwertyCoordinates : MonoBehaviour {
                         }
                         else if(!availablePairs.Contains(j) && !availablePairs.Contains(j - 1)) //if there are no pairs that contain this letter the puzzle is gauranteed to be bad and we must start over
                         {
+                            LogMsgSilent("Answer is impossible to make a puzzle for (K/L is too constrained), starting over");
                             //clear all variables
                             puzzle = "";
                             answer.Clear();
@@ -602,18 +609,10 @@ public class qwertyCoordinates : MonoBehaviour {
                 }
             }
 
-            /*for (int j = 0; j < availablePairs.Count; j++)
-            {
-                print( "CONFIRMED PAIR " + availablePairs[j]);
-            }*/
-
-            ////begin adding in extra characters
+            ////begin adding in the special characters (shift capslock and tab)
             string editedWord = currentWord;
-            int editedWordOffset = 0;
-
-            //words w/ an odd number of characters need an extra shift/capslock character
-
-            for (int j = 0; j < currentWord.Length; j++)
+            int editedWordOffset = 0; //when a character is added, j doesn't increase and we need to account for the extra characters. it's done this way because if we inserted characters into currentWord directly it would fuck with availablePairs and probably be hella annoying anyway
+            for (int j = 0; j < currentWord.Length; j++) //goes through every character in the word
             {
                 if (j == 0 && i > 0) //every word but the first has a preceding tab character
                 {
@@ -621,21 +620,22 @@ public class qwertyCoordinates : MonoBehaviour {
                     editedWord = "T" + editedWord;
                     continue;
                 }
-                else if (!availablePairs.Contains(j) || //no pair has this letter, we must caps/shift
-                (j == currentWord.Length - 1 && editedWord.Length % 2 == 1)) // or we are at the end of the word and it's currently odd
+
+                if (!availablePairs.Contains(j) || //no pair has this letter, we must caps/shift
+                (j == currentWord.Length - 1 && editedWord.Length % 2 == 1)) // or we are at the end of the word and its character count (including tab) is currently odd
                 {
                     if (RowFromCharacter(editedWord[j + editedWordOffset]) == 2 || IndexFromCharacter(editedWord[j + editedWordOffset]) >= 8) //if shift shares the row or if the letter causes punctation we can't use shift
                     {
                         editedWord = editedWord.Insert(j + editedWordOffset, "C");
                     }
-                    else if (RowFromCharacter(editedWord[j + editedWordOffset]) == 1) //overlap, can't use caps lock
+                    else if (RowFromCharacter(editedWord[j + editedWordOffset]) == 1) //similar if capslock and the letter is on the same row we cant use it
                     {
                         editedWord = editedWord.Insert(j + editedWordOffset, "S");
                     }
                     else
                     {
-                        switch (Random.Range(0, 2))
-                        {
+                        switch (Random.Range(0, 2)) //randomly decide between the two
+                        { //used to have a skew towards capslock but after playtesting it was made more even, maybe i'll try messing around with it again one day
                             case 0: //shift
                                 editedWord = editedWord.Insert(j + editedWordOffset, "S");
                                 break;
@@ -647,18 +647,17 @@ public class qwertyCoordinates : MonoBehaviour {
                     editedWordOffset++;
                     continue;
                 }
-                else //we allow the pair
+                else //we allow the pair of characters (no special characters added)
                 {
                     j++; //advance j by one so we won't consider the next letter since we just confirmed it as the pair for the last one we checked
                 }
             }
-            print("Edited word: " + editedWord);
+            LogMsgSilent("Word with special characters added: " + editedWord);
 
-            ////create puzzle based off of modified answer
+            //we go through every pair of characters and add their result to the end of the puzzle
             bool capsOn = initialCapsLockState;
-            for(int j = 0; j < editedWord.Length; j += 2) //because of added tabs/shift/capslock characters word will have an even length
+            for(int j = 0; j < editedWord.Length; j += 2) //because of added tabs/shift/capslock characters edited word always will have an even length
             {
-                LogMsgSilent("character pair: \'" + editedWord[j] + "\' \'" + editedWord[j + 1] + "\'");
                 string addOn = "";
                 switch(editedWord[j])
                 {
@@ -678,9 +677,8 @@ public class qwertyCoordinates : MonoBehaviour {
                 }
                 puzzle += addOn;
             }
-
             string formattedWord = FormatEditedWord(editedWord, initialCapsLockState);
-            answer[i] = formattedWord;
+            answer[i] = formattedWord; //excising the special characters for the answer is okay, because they don't require capslock and shift specifically, only capitalization
             initialCapsLockState = capsOn;
         }
 
@@ -690,22 +688,21 @@ public class qwertyCoordinates : MonoBehaviour {
         LogMsg("An acceptable answer for this puzzle would be " + formattedAnswer);
     }
 
+    //visuals
     void instantiateDashes() //creates the visuals for the answer lengths centered around the answerTextParent object
     {
         int characterCount = 0;
         for (int i = 0; i < answer.Count; i++)
         {
-            if (characterCount > 0) //not the start of a line
+            if (characterCount > 0) //not the first word
             {
                 characterCount++;
             }
             characterCount += answer[i].Length;
-
-            //print("Character count: " + characterCount);
         }
         float lineWidth = (characterCount - 1) * spriteWidth;
 
-        int index = 0;
+        int index = 0; //used to space out characters without giving spaces a sprite
         for (int i = 0; i < answer.Count; i++)
         {
             //print("Word " + i + " (" + answer[i] + ")");
@@ -742,9 +739,35 @@ public class qwertyCoordinates : MonoBehaviour {
         }
     }
 
+    void SetBigTest(string setText)
+    {
+        puzzleText.text = setText;
+        foreach(Text outlineText in puzzleOutlineText)
+        {
+            outlineText.text = setText;
+        }
+    }
+
+    IEnumerator WaveStar()
+    {
+        float tx = 0;
+        float ty = 0;
+
+        while (true)
+        {
+            backgroundStarMaterial.SetFloat("_XPhase", tx);
+            backgroundStarMaterial.SetFloat("_YPhase", ty);
+
+            tx += .01f;
+            ty += .02f;
+            yield return new WaitForSeconds(.01f);
+        }
+    }
+
+    //utility
     int IndexFromCharacter(char letter)
     {
-        switch(letter)
+        switch (letter)
         {
             case 'q':
             case 'a':
@@ -824,56 +847,7 @@ public class qwertyCoordinates : MonoBehaviour {
         return 3;
     }
 
-    string FormatEditedWord(string text, bool initialCapsLock)
-    {
-        string editedText = "";
-
-        bool capsLock = initialCapsLock;
-        bool shift = false;
-        for(int i = 0; i < text.Length; i++)
-        {
-            switch(text[i])
-            {
-                case 'C':
-                    capsLock = !capsLock;
-                    break;
-                case 'S':
-                    shift = true;
-                    break;
-                case 'T': //tab: don't add anything because this is already dealt with
-                    break;
-                default:
-                    if(capsLock ^ shift)
-                    {
-                        editedText += text[i].ToString().ToUpper();
-                    }
-                    else //everything is formatted in lowercase so we don't need to convert
-                    {
-                        editedText += text[i];
-                    }
-                    shift = false;
-                    break;
-            }
-        }
-        return editedText;
-    }
-
-    IEnumerator WaveStar()
-    {
-        float tx = 0;
-        float ty = 0;
-
-        while(true)
-        {
-            backgroundStarMaterial.SetFloat("_XPhase", tx);
-            backgroundStarMaterial.SetFloat("_YPhase", ty);
-
-            tx += .01f;
-            ty += .0105f;
-            yield return new WaitForSeconds(.01f);
-        }
-    }
-    
+    //logging and formatting
     void LogMsg(string msg)
     {
         Debug.LogFormat("[QWERTY Coordinates #{0}] {1}", ModuleId , msg);
@@ -896,5 +870,45 @@ public class qwertyCoordinates : MonoBehaviour {
             formattedList += answer[i];
         }
         return formattedList;
+    }
+
+    string FormatEditedWord(string text, bool initialCapsLock) //formats it so that special characters are removed and letters are capitalized based off of special characters
+    {
+        string editedText = "";
+
+        bool capsLock = initialCapsLock;
+        bool shift = false;
+        for (int i = 0; i < text.Length; i++)
+        {
+            switch (text[i])
+            {
+                case 'C':
+                    capsLock = !capsLock;
+                    break;
+                case 'S':
+                    shift = true;
+                    break;
+                case 'T': //tab: don't add anything because this is already dealt with
+                    break;
+                default:
+                    if (capsLock ^ shift)
+                    {
+                        editedText += text[i].ToString().ToUpper();
+                    }
+                    else //everything is formatted in lowercase so we don't need to convert
+                    {
+                        editedText += text[i];
+                    }
+                    shift = false;
+                    break;
+            }
+        }
+        return editedText;
+    }
+
+    string ColorCharacter(char character, string color)
+    {
+        string coolString = "<color=\"" + color + "\">" + character + "</color>";
+        return coolString;
     }
 }

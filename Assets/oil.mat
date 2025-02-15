@@ -7,7 +7,7 @@ Material:
   m_PrefabParentObject: {fileID: 0}
   m_PrefabInternal: {fileID: 0}
   m_Name: oil
-  m_Shader: {fileID: 4800000, guid: aee228cd31262b04783942768c0feda0, type: 3}
+  m_Shader: {fileID: 4800000, guid: 5d3fd7a5ba14e9f499c59c182dca7d38, type: 3}
   m_ShaderKeywords: 
   m_LightmapFlags: 4
   m_EnableInstancingVariants: 0
@@ -76,7 +76,12 @@ Material:
     - _SpecularHighlights: 1
     - _SrcBlend: 1
     - _UVSec: 0
+    - _XAmp: 0.099
+    - _XFreq: 0.88
     - _XPhase: 0
+    - _YAmp: 0.03
+    - _YAnp: 0.099
+    - _YFreq: 33.6
     - _YPhase: 0
     - _ZWrite: 1
     m_Colors:
