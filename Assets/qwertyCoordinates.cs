@@ -90,11 +90,12 @@ public class qwertyCoordinates : MonoBehaviour {
         StartCoroutine(WaveStar());
     }
 
+    //setup
     void SetupModule() //expects every variable to be completely blank
     {
         generatePuzzle();
 
-        SetBigTest(puzzle);
+        SetPuzzleText(puzzle);
 
         instantiateDashes();
     }
@@ -129,79 +130,75 @@ public class qwertyCoordinates : MonoBehaviour {
     //input
     void Update()
     {
-        if (focused && !solved)
+        if (!focused || solved)
         {
-            if(Input.anyKeyDown && reset)
+            return;
+        }
+
+        if(Input.anyKeyDown && reset)
+        {
+            resetModule();
+            reset = false;
+            return;
+        }
+
+        //check for a letter being pressed
+        for (int i = 0; i < TypableKeys.Length; i++)
+        {
+            if (Input.GetKeyDown(TypableKeys[i]))
             {
-                resetModule();
-                reset = false;
+                inputCharacter(keyNames[i]);
+                return;
+            }
+        }
+
+        //check for a shift being pressed or released
+        for (int i = 0; i < ShiftKeys.Length; i++)
+        {
+            if (Input.GetKeyUp(ShiftKeys[i])) //released - shift must be turned off
+            {
+                //print("Shift off");
+                shift = false;
+
+                if(!switchCapsLock && inputLength < answerIconRenderers.Count) //if switchCapsLock is true, shift was already disabled and a new icon tooks its place. otherwise, blank it
+                {
+                    answerIconRenderers[inputLength].sprite = null;
+                }
+            }
+            if (Input.GetKeyDown(ShiftKeys[i]))
+            {
+                if(tabOn) //shift and capslock cannot be pressed when tab is pressed
+                {
+                    bombAudio.PlaySoundAtTransform("buzzer", transform);
+                    return;
+                }
+
+                switchCapsLock = false; //disable capslock (cannot press both capslock and shift at once)
+                shift = true;
+
+                answerIconRenderers[inputLength].sprite = answerShift;
+            }
+        }
+
+        //check for capslock
+        if (Input.GetKeyDown(KeyCode.CapsLock))
+        {
+            if (tabOn) //shift and capslock cannot be pressed when tab is pressed
+            {
+                bombAudio.PlaySoundAtTransform("buzzer", transform);
                 return;
             }
 
-            for(int i = 0; i < TypableKeys.Length; i++)
-            {
-                if(Input.GetKeyDown(TypableKeys[i]))
-                {
-                    inputCharacter(keyNames[i]);
-                }
-            }
-            for (int i = 0; i < ShiftKeys.Length; i++)
-            {
-                if (Input.GetKeyUp(ShiftKeys[i]))
-                {
-                    //print("Shift off");
-                    shift = false;
+            shift = false;
+            switchCapsLock = !switchCapsLock;
 
-                    if(!switchCapsLock && inputLength < answerIconRenderers.Count) //if switchCapsLock is true, we know capsLock was pressed so we shouldn't blank the sprite
-                    {
-                        answerIconRenderers[inputLength].sprite = null;
-                    }
-                }
-                if (Input.GetKeyDown(ShiftKeys[i]))
-                {
-                    //print("Shift on");
-                    if (!tabOn)
-                    {
-                        switchCapsLock = false;
-                        shift = true;
+            answerIconRenderers[inputLength].sprite = switchCapsLock ? answerCapsLock : null;
+        }
 
-                        answerIconRenderers[inputLength].sprite = answerShift;
-                    }
-                    else
-                    {
-                        bombAudio.PlaySoundAtTransform("buzzer", transform);
-                    }
-                }
-            }
-            if (Input.GetKeyDown(KeyCode.CapsLock))
-            {
-                //print("Caps " + (switchCapsLock ? "off" : "on"));
-                if (!tabOn)
-                {
-                    switchCapsLock = !switchCapsLock;
-                    shift = false;
-
-                    if (inputLength < answerIconRenderers.Count)
-                    {
-                        if (switchCapsLock)
-                        {
-                            answerIconRenderers[inputLength].sprite = answerCapsLock;
-                        }
-                        else
-                        {
-                            answerIconRenderers[inputLength].sprite = null;
-                        }
-                    }
-                }
-                else
-                {
-                    bombAudio.PlaySoundAtTransform("buzzer", transform);
-                }
-            }
-            if (Input.GetKeyDown(KeyCode.Backspace))
-            {
-                deleteCharacter();
-            }
+        //check for backspace
+        if (Input.GetKeyDown(KeyCode.Backspace))
+        {
+            deleteCharacter();
         }
     }
 
@@ -369,76 +366,73 @@ public class qwertyCoordinates : MonoBehaviour {
     void checkAnswer()
     {
         LogMsg("Submitted " + inputtedText);
-        string visualSubmissionText = "";
-        string visualColoredSubmissionText = "";
 
-        bool incorrectLetter = false;
-        List<int> correctLetterIndices = new List<int>();
-        bool foundOutTooLong = false;
+        //strings that the puzzle text will be changed to to show result of answer
+        string visualSubmissionText = ""; 
+        string visualColoredSubmissionText = ""; //regular and colored have to be seperated so we don't color the black outline text
+
+        bool incorrectLetter = false; //determines if the mod strikes
+        List<int> correctLetterIndices = new List<int>(); //every letter in this will be colored green, every other letter colored red
+        bool foundOutTooLong = false; //
+
         for (int i = 0; i < inputtedText.Length; i += 2)
         {
             string letterColor = "red"; //this will only change if the letter is correct
+            char letterFromInput = '?'; //will be set to a letter if the pair of letters makes sense
 
-            if(i + 1 >= inputtedText.Length)
+            //deal with all of the cases where it wouldn't make sense to generate a letter
+            //using else ifs so that if a code-breaking scenario appears it's checked for first and doesn't travel all the way down. there is almost certainly a better way to do this, but i did it this way so that i don't have to repeat adding the inputted letter to the visualSubmissionText variables
+            if (i + 1 >= inputtedText.Length) //if the letter we're checking doesn't have another letter in its pair (can only happen at the end of the answer)
             {
                 LogMsg("Ending character " + inputtedText[i] + " doesn't have another character to make a coordinate.");
                 incorrectLetter = true;
-                visualSubmissionText += '?';
-                visualColoredSubmissionText += ColorCharacter('?', letterColor);
-                break;
             }
-
-            char letterFromInput = char.ToUpper(keyboardLayout[RowFromCharacter(inputtedText[i]), IndexFromCharacter(inputtedText[i + 1])]);
-            if (i / 2 >= puzzle.Length)
+            else if (inputtedText[i + 1].EqualsAny('T', 'C', 'S')) //second pair is a special character - this makes no sense
             {
-                if (!foundOutTooLong)
-                {
-                    LogMsg("The remaining generated letters do not fit in the puzzle.");
-                    if (RowFromCharacter(inputtedText[i]) == RowFromCharacter(inputtedText[i + 1]) || IndexFromCharacter(inputtedText[i]) == IndexFromCharacter(inputtedText[i + 1]))
-                    {
-                        letterFromInput = '?';
-                    }
-
-                    foundOutTooLong = true;
-                }
-
-                //im repeating my code but i dont care
-                visualSubmissionText += letterFromInput;
-                visualColoredSubmissionText += ColorCharacter(letterFromInput, letterColor);
+                LogMsg("Coordinate " + inputtedText[i] + inputtedText[i + 1] + " doesn't result in a letter.");
                 incorrectLetter = true;
-                continue;
             }
-            
-            if (inputtedText[i] == inputtedText[i + 1]) //incorrect letter
+            else if (inputtedText[i] == inputtedText[i + 1]) //inputted the same letter twice - would result in the same letter but is not allowed
             {
                 LogMsg("Coordinate " + inputtedText[i] + inputtedText[i + 1] + " both are the same letter.");
                 incorrectLetter = true;
-                letterFromInput = '?';
             }
-            else if (RowFromCharacter(inputtedText[i]) == RowFromCharacter(inputtedText[i + 1]) || IndexFromCharacter(inputtedText[i]) == IndexFromCharacter(inputtedText[i + 1])) //incorrect letter
+            else if (RowFromCharacter(inputtedText[i]) == RowFromCharacter(inputtedText[i + 1]) || IndexFromCharacter(inputtedText[i]) == IndexFromCharacter(inputtedText[i + 1])) //letters share a row or column - would result in one of the two inputted letters but is not allowed
             {
                 LogMsg("Coordinate " + inputtedText[i] + inputtedText[i + 1] + "'s characters are the same row/column.");
                 incorrectLetter = true;
-                letterFromInput = '?';
             }
-            else if (letterFromInput != char.ToUpper(puzzle[i / 2])) //incorrect letter
+            else //we know that there will be a letter generated
             {
-                LogMsg("Coordinate " + inputtedText[i] + inputtedText[i + 1] + " results in the character " + letterFromInput + ", which is incorrect. (Expected character: " + char.ToLower(puzzle[i / 2]) + ")");
-                incorrectLetter = true;
-            }
-            else
-            {
-                correctLetterIndices.Add(i);
-                correctLetterIndices.Add(i+1);
-                letterColor = "lime";
+                letterFromInput = char.ToUpper(keyboardLayout[RowFromCharacter(inputtedText[i]), IndexFromCharacter(inputtedText[i + 1])]);
+                if (i / 2 >= puzzle.Length) //if the length of the resulting string is longer than the puzzle, we can still read the letter but it will be incorrect because there is nothing to compare it to
+                {
+                    if (!foundOutTooLong) //done this way so it only prints this once
+                    {
+                        LogMsg("The remaining generated letters do not fit in the puzzle.");
+                        foundOutTooLong = true;
+                    }
+                    incorrectLetter = true;
+                }
+                else if (letterFromInput != char.ToUpper(puzzle[i / 2])) //incorrect letter
+                {
+                    LogMsg("Coordinate " + inputtedText[i] + inputtedText[i + 1] + " results in the character " + letterFromInput + ", which is incorrect. (Expected character: " + char.ToLower(puzzle[i / 2]) + ")");
+                    incorrectLetter = true;
+                }
+                else //the letter is correct !!
+                {
+                    correctLetterIndices.Add(i);
+                    correctLetterIndices.Add(i + 1);
+                    letterColor = "lime";
+                }
             }
 
             visualSubmissionText += letterFromInput;
             visualColoredSubmissionText += ColorCharacter(letterFromInput, letterColor);
         }
 
-        SetBigTest(visualSubmissionText);
-        //bodge, don't caare
+        SetPuzzleText(visualSubmissionText);
+        //sets the white puzzle text to the colored text
         puzzleText.text = visualColoredSubmissionText;
 
         if (incorrectLetter)
@@ -474,8 +468,9 @@ public class qwertyCoordinates : MonoBehaviour {
         }
 
         bool invalidWord = false;
-        string[] inputtedAnswer = inputtedText.Replace("C","").Replace("S", "").Split('T'); //splits the inputted text at the tabs so we can check if each word is in our wordlist
-        int otherAnswerLetterIndex = 0; //this is only named differently because wawawa variables have to be named differently wawawa
+        string[] inputtedAnswer = inputtedText.Replace("C","").Replace("S", "").Split('T'); //splits the inputted text at the tabs so we can check if each word is in our wordlist. also removes all special characters
+        int otherAnswerLetterIndex = 0; //this is only named differently because variables have to be named differently
+
         for (int i = 0; i < inputtedAnswer.Length; i++)
         {
             if (new Data().ContainsWord(inputtedAnswer[i]))
@@ -497,15 +492,16 @@ public class qwertyCoordinates : MonoBehaviour {
             }
         }
 
-        if(invalidWord)
+        if(invalidWord) //there is an invalid word - we will reset but not strike
         {
             reset = true;
             return;
         }
 
+        //everything is correct!! the module solves
+        solved = true;
         module.HandlePass();
         bombAudio.PlaySoundAtTransform("win", transform);
-        solved = true;
         puzzleText.color = Color.green;
         backgroundStarMaterial.color = Color.green;
     }
@@ -706,8 +702,6 @@ public class qwertyCoordinates : MonoBehaviour {
         int index = 0; //used to space out characters without giving spaces a sprite
         for (int i = 0; i < answer.Count; i++)
         {
-            //print("Word " + i + " (" + answer[i] + ")");
-
             for(int j = 0; j < answer[i].Length; j++,index++ )
             {
                 if(i > 0 && j == 0)
@@ -732,15 +726,17 @@ public class qwertyCoordinates : MonoBehaviour {
             }
         }
 
-        if(characterCount >= 10)
+        if (characterCount >= 10)
         {
-            //print(characterCount);
-            /*TODO: Implement*/
             answerTextParent.transform.localScale = new Vector3(.115f - (.005f * characterCount), 0.07f, 0.07f);
+        }
+        else
+        {
+            answerTextParent.transform.localScale = new Vector3(.07f, 0.07f, 0.07f);
         }
     }
 
-    void SetBigTest(string setText)
+    void SetPuzzleText(string setText)
     {
         puzzleText.text = setText;
         foreach(Text outlineText in puzzleOutlineText)
@@ -859,8 +855,8 @@ public class qwertyCoordinates : MonoBehaviour {
         Debug.LogFormat("<QWERTY Coordinates #{0}> {1}", ModuleId, msg);
     }
 
-    string FormatStringList(List<string> list)
-    {
+    string FormatStringList(List<string> list) //makes a string of every element in the list, seperated by spaces
+    { //there's probably an easier way to do this methinks
         string formattedList = "";
         for (int i = 0; i < answer.Count; i++)
         {
@@ -907,7 +903,7 @@ public class qwertyCoordinates : MonoBehaviour {
         return editedText;
     }
 
-    string ColorCharacter(char character, string color)
+    string ColorCharacter(char character, string color) //makes string that just adds a color tag to a character
     {
         string coolString = "<color=\"" + color + "\">" + character + "</color>";
         return coolString;
