@@ -14,15 +14,10 @@ MonoBehaviour:
   id: qwertyCoordinates
   title: QWERTY Coordinates
   author: Red Penguin
-  description: 'Alliteration is the repetition of the beginning sound of words. Therefore,
-    QWERTY Coordinates is an alliteration.
-
-
-    Playtested by jacobo
-
-
-    joe many liberals does it take to change log by bulb? none! they''re too busy...manual
-    challenge :Paul_Moss:'
+  description: "Alliteration is the repetition of the beginning sound of words. Therefore,
+    QWERTY Coordinates is an alliteration.\n\nPlaytested by blananas2, Quinn Wuest,
+    and jacobo  \n\njoe many liberals does it take to change log by bulb? none! they're
+    too busy...manual challenge :Paul_Moss:"
   version: 1
   outputFolder: build
-  previewImage: {fileID: 0}
+  previewImage: {fileID: 2800000, guid: 30d4dce2a607dfb46bd41e0d1d9657a8, type: 3}

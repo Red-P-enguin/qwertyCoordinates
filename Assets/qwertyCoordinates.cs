@@ -7,21 +7,22 @@ using Words;
 public class qwertyCoordinates : MonoBehaviour {
 
     public KMBombModule module;
-    public KMBombInfo bomb;
     public KMAudio bombAudio;
-    public KMSelectable moduleSelectable;
     static int ModuleIdCounter = 1;
     int ModuleId;
     private bool focused;
     private bool solved;
     private bool reset;
 
+    //button
+    public KMSelectable resetButton;
+    public SpriteRenderer resetButtonRenderer;
+
     //visuals
     public Text puzzleText; //"puzzle" in the code refers to the large central text
     public Text[] puzzleOutlineText;
     public GameObject answerTextParent; //"answer" in the code refers to the bottom underscores used for input
     public GameObject answerTextPrefab;
-    public GameObject answerIconPrefab;
     List<SpriteRenderer> answerTextRenderers = new List<SpriteRenderer>();
     List<SpriteRenderer> answerIconRenderers = new List<SpriteRenderer>();
     
@@ -33,6 +34,8 @@ public class qwertyCoordinates : MonoBehaviour {
     public Sprite answerCapsLock;
     public Sprite answerShift;
     float spriteWidth = .25f;
+    public Sprite resetUnhighlighted;
+    public Sprite resetHighlighted;
 
     //background elements
     public MeshRenderer backgroundStarRenderer;
@@ -78,8 +81,13 @@ public class qwertyCoordinates : MonoBehaviour {
     {
         ModuleId = ModuleIdCounter++;
 
-        moduleSelectable.OnFocus += delegate { focused = true; };
-        moduleSelectable.OnDefocus += delegate { focused = false; };
+        GetComponent<KMSelectable>().OnFocus += delegate { focused = true; };
+        GetComponent<KMSelectable>().OnDefocus += delegate { focused = false; };
+
+        resetButton.OnInteract += delegate { resetModule(); return false; };
+        resetButton.OnHighlight += delegate { resetButtonRenderer.sprite = resetHighlighted; };
+        resetButton.OnHighlightEnded += delegate { resetButtonRenderer.sprite = resetUnhighlighted; };
+        resetButton.gameObject.SetActive(false);
     }
 
     void Start () {
@@ -102,6 +110,14 @@ public class qwertyCoordinates : MonoBehaviour {
 
     void resetModule() //resets every necessary component of the module and starts from scratch
     {
+        resetButton.gameObject.SetActive(false);
+
+        //the reset button shouldn't be available ever when the module doesn't need to be reset, but just in case
+        if (!reset)
+        {
+            return;
+        }
+
         //reset all puzzle-related variables
         puzzle = "";
         answer.Clear();
@@ -125,20 +141,16 @@ public class qwertyCoordinates : MonoBehaviour {
         answerIconRenderers.Clear();
 
         SetupModule();
+
+        reset = false;
     }
 
     //input
     void Update()
     {
-        if (!focused || solved)
+        //won't accept input if not focused, or the module is solved, or if the module needs to reset
+        if (!focused || solved || reset)
         {
-            return;
-        }
-
-        if(Input.anyKeyDown && reset)
-        {
-            resetModule();
-            reset = false;
             return;
         }
 
@@ -438,6 +450,7 @@ public class qwertyCoordinates : MonoBehaviour {
         if (incorrectLetter)
         {
             reset = true;
+            resetButton.gameObject.SetActive(true);
             module.HandleStrike();
 
             //visuals
@@ -495,6 +508,7 @@ public class qwertyCoordinates : MonoBehaviour {
         if(invalidWord) //there is an invalid word - we will reset but not strike
         {
             reset = true;
+            resetButton.gameObject.SetActive(true);
             return;
         }
 
@@ -847,12 +861,12 @@ public class qwertyCoordinates : MonoBehaviour {
     //logging and formatting
     void LogMsg(string msg)
     {
-        Debug.LogFormat("[QWERTY Coordinates #{0}] {1}", ModuleId , msg);
+        //Debug.LogFormat("[QWERTY Coordinates #{0}] {1}", ModuleId , msg);
     }
 
     void LogMsgSilent(string msg)
     {
-        Debug.LogFormat("<QWERTY Coordinates #{0}> {1}", ModuleId, msg);
+        //Debug.LogFormat("<QWERTY Coordinates #{0}> {1}", ModuleId, msg);
     }
 
     string FormatStringList(List<string> list) //makes a string of every element in the list, seperated by spaces
