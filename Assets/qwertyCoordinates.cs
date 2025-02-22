@@ -87,7 +87,7 @@ public class qwertyCoordinates : MonoBehaviour {
         resetButton.OnInteract += delegate { resetModule(); return false; };
         resetButton.OnHighlight += delegate { resetButtonRenderer.sprite = resetHighlighted; };
         resetButton.OnHighlightEnded += delegate { resetButtonRenderer.sprite = resetUnhighlighted; };
-        resetButton.gameObject.SetActive(false);
+        SetResetButtonActive(false);
     }
 
     void Start () {
@@ -110,7 +110,7 @@ public class qwertyCoordinates : MonoBehaviour {
 
     void resetModule() //resets every necessary component of the module and starts from scratch
     {
-        resetButton.gameObject.SetActive(false);
+        SetResetButtonActive(false);
 
         //the reset button shouldn't be available ever when the module doesn't need to be reset, but just in case
         if (!reset)
@@ -450,7 +450,7 @@ public class qwertyCoordinates : MonoBehaviour {
         if (incorrectLetter)
         {
             reset = true;
-            resetButton.gameObject.SetActive(true);
+            SetResetButtonActive(true);
             module.HandleStrike();
 
             //visuals
@@ -508,7 +508,7 @@ public class qwertyCoordinates : MonoBehaviour {
         if(invalidWord) //there is an invalid word - we will reset but not strike
         {
             reset = true;
-            resetButton.gameObject.SetActive(true);
+            SetResetButtonActive(false);
             return;
         }
 
@@ -921,5 +921,11 @@ public class qwertyCoordinates : MonoBehaviour {
     {
         string coolString = "<color=\"" + color + "\">" + character + "</color>";
         return coolString;
+    }
+
+    void SetResetButtonActive(bool active)
+    {
+        resetButton.transform.localScale = active ? new Vector3(0.07f, 0.07f, 0.07f) : new Vector3(0,0,0);
+        print(resetButton);
     }
 }
