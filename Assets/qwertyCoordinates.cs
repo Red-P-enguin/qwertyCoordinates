@@ -508,7 +508,7 @@ public class qwertyCoordinates : MonoBehaviour {
         if(invalidWord) //there is an invalid word - we will reset but not strike
         {
             reset = true;
-            SetResetButtonActive(false);
+            SetResetButtonActive(true);
             return;
         }
 
@@ -926,6 +926,5 @@ public class qwertyCoordinates : MonoBehaviour {
     void SetResetButtonActive(bool active)
     {
         resetButton.transform.localScale = active ? new Vector3(0.07f, 0.07f, 0.07f) : new Vector3(0,0,0);
-        print(resetButton);
     }
 }
